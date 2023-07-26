@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"gojwtcrack/mod"
 	"log"
 	"os"
 	"strings"
@@ -16,7 +17,7 @@ import (
 
 type Header struct {
 	Typ string `json:"typ"`
-	Alg  string `json:"alg"`
+	Alg string `json:"alg"`
 }
 
 type Token struct {
@@ -27,25 +28,16 @@ type Token struct {
 
 func main() {
 
-	var workerCount int
-	flag.IntVar(&workerCount, "c", 10, "set concurrent workers")
-
-	var tokenFile string
-	flag.StringVar(&tokenFile, "t", "", "File containing JWT token(s)")
-
-	var dictFile string
-	flag.StringVar(&dictFile, "d", "", "Dictionary file. If ommited, will read from stdin")
-
 	flag.Parse()
-	if tokenFile == "" {
+	if mod.TokenFile == "" {
 		log.Fatal("Must specify -t")
 	}
 
 	var inputStream *bufio.Scanner
-	if dictFile == "" {
+	if mod.DictFile == "" {
 		inputStream = bufio.NewScanner(os.Stdin)
 	} else {
-		file, err := os.Open(dictFile)
+		file, err := os.Open(mod.DictFile)
 		defer file.Close()
 
 		if err != nil {
@@ -55,7 +47,7 @@ func main() {
 		inputStream = bufio.NewScanner(file)
 	}
 
-	file, err := os.Open(tokenFile)
+	file, err := os.Open(mod.TokenFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,7 +55,7 @@ func main() {
 	s := bufio.NewScanner(file)
 	s.Scan()
 	t := s.Text()
-	crackJWT(t, workerCount, inputStream)
+	crackJWT(t, mod.WorkerCount, inputStream)
 }
 
 func crackJWT(token string, workerCount int, scanner *bufio.Scanner) bool {
